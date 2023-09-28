@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Models\Restaurant;
+use App\Models\Cuisine;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -24,11 +26,19 @@ class AuthController extends Controller
             //Validated
             $validateUser = Validator::make($request->all(), 
             [
-                'name' => 'required',
-                'phone' => 'required|unique:users,phone|min:8',
                 'email' => 'required|email|unique:users,email',
-                'password' => 'required'
+                'password' => 'required',
+                'restaurant_name' => 'required',
+                'restaurant_phone' => 'required',
+
             ]);
+
+            if ($email = User::where('email', $request->email)->first()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Email already exists',
+                ]);
+            }
 
             if($validateUser->fails()){
                 return response()->json([
@@ -38,21 +48,43 @@ class AuthController extends Controller
                 ], 401);
             }
 
+            
+            //create user
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
-                'phone' => $request->phone,
                 'role' => 1,
-                'resturant_name' => $request->resturant_name,
-                'address' => $request->address,
-                'city' => $request->city,
-                'state' => $request->state,
                 'password' => Hash::make($request->password)
             ]);
 
+            //create restaurant
+            $restaurant = Restaurant::create([
+                'owners_name' => $request->restaurant_owners_name,
+                'name' => $request->restaurant_name,
+                'phone' => $request->restaurant_phone,
+                'address' => $request->restaurant_address,
+                'city' => $request->restaurant_city,
+                'state' => $request->restaurant_state,
+                'user_id' => $user->id,
+            ]);
+
+            $user->restaurant_id = $restaurant->id;
+            $user->save();
+
+            //create cuisines which comes in array
+            if($request->restaurant_cuisine){
+                foreach($request->restaurant_cuisine as $cuisine){
+                    $cuisine = Cuisine::create([
+                        'name' => $cuisine,
+                        'restaurant_id' => $restaurant->id,
+                    ]);
+                }
+            }
+
+
             return response()->json([
                 'status' => true,
-                'message' => 'User Created Successfully'
+                'message' => 'Account Created Successfully'
                 // 'token' => $user->createToken("API TOKEN")->plainTextToken
             ], 200);
 

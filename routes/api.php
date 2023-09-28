@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\DashController;
 
 /*
 |--------------------------------------------------------------------------
@@ -21,3 +22,9 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::post('/auth/register', [AuthController::class, 'createUser']);
 Route::post('/auth/login', [AuthController::class, 'loginUser']);
+
+//get dashboard data
+Route::get('/dashboard', [DashController::class, 'dashboard']);
+
+//get orders data
+Route::get('/orders', [DashController::class, 'orders']);
